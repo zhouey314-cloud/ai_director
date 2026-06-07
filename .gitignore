@@ -1,0 +1,26 @@
+# 环境变量（含 API Key）
+.env
+
+# my-video 子项目（非本仓库代码）
+my-video/
+
+# 视频源文件（体积太大，不提交 git）
+*.mp4
+*.mov
+*.avi
+*.mkv
+
+# 虚拟环境
+venv/
+
+# 输出产物
+output/
+.temp_clips/
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
