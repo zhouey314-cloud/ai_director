@@ -44,6 +44,7 @@ from modules.audio_processor import extract_audio, detect_silence, get_audio_dur
 from modules.ai_services import transcribe_audio, analyze_transcript
 from modules.timeline_editor import merge_silence_and_ai_cuts
 from modules.video_renderer import generate_srt, generate_edl, generate_fcpxml, render_final_video
+from modules.premiere_automation import activate_and_import
 
 
 # ---------------------------------------------------------------------------
@@ -79,6 +80,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     p.add_argument("--no-srt", action="store_true", help="不生成字幕")
     p.add_argument("--no-edl", action="store_true", help="不生成 EDL")
     p.add_argument("--no-fcpxml", action="store_true", help="不生成 FCPXML（Premiere Pro 用）")
+    p.add_argument("--no-launch-pr", action="store_true", help="不自动唤醒 Premiere Pro 导入序列")
     p.add_argument("--no-video", action="store_true", help="不渲染成片")
     return p.parse_args(argv)
 
@@ -184,13 +186,15 @@ def main(argv: Optional[List[str]] = None) -> None:
         )
 
     if not args.no_fcpxml:
-        generate_fcpxml(
+        fcpxml_path = generate_fcpxml(
             keeps,
             input_path,
             os.path.join(args.output_dir, f"{base}_premiere.fcpxml"),
             fps=args.fps,
             total_duration=total_dur,
         )
+        if not args.no_launch_pr:
+            activate_and_import(fcpxml_path)
 
     if not args.no_video:
         render_final_video(
