@@ -43,7 +43,7 @@ load_dotenv()
 from modules.audio_processor import extract_audio, detect_silence, get_audio_duration
 from modules.ai_services import transcribe_audio, analyze_transcript
 from modules.timeline_editor import merge_silence_and_ai_cuts
-from modules.video_renderer import generate_srt, generate_edl, render_final_video
+from modules.video_renderer import generate_srt, generate_edl, generate_fcpxml, render_final_video
 
 
 # ---------------------------------------------------------------------------
@@ -78,6 +78,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     p.add_argument("--fps", type=float, default=30.0, help="EDL 帧率 (默认 30)")
     p.add_argument("--no-srt", action="store_true", help="不生成字幕")
     p.add_argument("--no-edl", action="store_true", help="不生成 EDL")
+    p.add_argument("--no-fcpxml", action="store_true", help="不生成 FCPXML（Premiere Pro 用）")
     p.add_argument("--no-video", action="store_true", help="不渲染成片")
     return p.parse_args(argv)
 
@@ -180,6 +181,15 @@ def main(argv: Optional[List[str]] = None) -> None:
             input_path,
             os.path.join(args.output_dir, f"{base}_davinci.edl"),
             fps=args.fps,
+        )
+
+    if not args.no_fcpxml:
+        generate_fcpxml(
+            keeps,
+            input_path,
+            os.path.join(args.output_dir, f"{base}_premiere.fcpxml"),
+            fps=args.fps,
+            total_duration=total_dur,
         )
 
     if not args.no_video:

@@ -1,5 +1,5 @@
 """
-视频渲染模块 - SRT / EDL / 最终成片
+视频渲染模块 - SRT / EDL / FCPXML / 最终成片
 """
 import os
 import subprocess
@@ -103,6 +103,73 @@ def generate_edl(
             tc += dur
 
     print(f"  生成 EDL: {output_path}")
+    return output_path
+
+
+# ---------------------------------------------------------------------------
+# FCPXML (Final Cut Pro XML) — Adobe Premiere Pro 最佳兼容格式
+# ---------------------------------------------------------------------------
+
+def generate_fcpxml(
+    keep_segments: List[Tuple[float, float]],
+    source_path: str,
+    output_path: str,
+    fps: float = 30.0,
+    total_duration: float = 0,
+) -> str:
+    """生成 FCPXML 1.10 格式，兼容 Adobe Premiere Pro / Final Cut Pro 导入。
+
+    FCPXML 比 EDL 更现代：
+      - 保留源文件路径，PR 自动关联素材
+      - 支持多轨道音频
+      - 时间码更精确
+    """
+    import xml.sax.saxutils as saxutils
+
+    source_name = os.path.basename(source_path)
+    abs_path = os.path.abspath(source_path)
+    file_url = "file://" + saxutils.escape(abs_path)
+
+    project_name = f"AI_Edit_{os.path.splitext(source_name)[0]}"
+    total_dur = total_duration or keep_segments[-1][1]
+
+    lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<!DOCTYPE fcpxml>',
+        '<fcpxml version="1.10">',
+        "  <resources>",
+        f'    <format id="r1" name="FFVideoFormat{fps:.0f}p{fps:.0f}" frameDuration="1/{fps:.0f}s" width="1920" height="1080"/>',
+        f'    <asset id="r2" name="{saxutils.escape(source_name)}" src="{saxutils.escape(file_url)}" start="0s" duration="{total_dur:.6f}s" hasVideo="1" hasAudio="1" format="r1"/>',
+        "  </resources>",
+        "  <library>",
+        '    <event name="AI Director Edit">',
+        f'      <project name="{saxutils.escape(project_name)}">',
+        "        <sequence>",
+        "          <spine>",
+    ]
+
+    timeline_offset = 0.0
+    for start, end in keep_segments:
+        dur = end - start
+        lines.append(f'            <clip name="{saxutils.escape(source_name)}" offset="{timeline_offset:.6f}s" duration="{dur:.6f}s" start="{start:.6f}s">')
+        lines.append(f'              <video ref="r2" offset="{start:.6f}s" dur="{dur:.6f}s"/>')
+        lines.append(f'              <audio ref="r2" offset="{start:.6f}s" dur="{dur:.6f}s"/>')
+        lines.append("            </clip>")
+        timeline_offset += dur
+
+    lines.extend([
+        "          </spine>",
+        "        </sequence>",
+        "      </project>",
+        "    </event>",
+        "  </library>",
+        "</fcpxml>",
+    ])
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+
+    print(f"  生成 FCPXML: {output_path}")
     return output_path
 
 
