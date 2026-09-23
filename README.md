@@ -1,5 +1,7 @@
 # AI Director
 
+![Synthetic timeline proof](docs/images/timeline.svg)
+
 A small video-editing workflow prototype for turning a talking-head clip into
 reviewable edit decisions and common interchange outputs.
 
@@ -33,6 +35,11 @@ python ai_director.py path/to/synthetic-sample.mp4 --silence-only --no-video --n
 The repository contains no real video, voice or customer material. Create a
 5–10 second synthetic clip locally for a smoke run.
 
+A four-second FFmpeg-generated [synthetic input](examples/synthetic-input.mp4)
+and [sample timeline output](examples/sample-keep-list.json) are included for
+repeatable offline inspection. Run the documented command with this sample to
+exercise audio extraction, silence detection and interchange export.
+
 ## Output and truth boundary
 
 The tool emits edit artifacts for review. Provider-backed transcription,
@@ -55,3 +62,7 @@ external provider, media and Premiere integrations remain environment-dependent.
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+See [architecture](docs/architecture.md), [resume bullets](docs/resume-bullets.md)
+and [interview notes](docs/interview-notes.md). No provider-backed transcript
+or semantic edit quality is claimed by the synthetic sample.

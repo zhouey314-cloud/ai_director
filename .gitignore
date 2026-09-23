@@ -6,6 +6,7 @@ my-video/
 
 # 视频源文件（体积太大，不提交 git）
 *.mp4
+!examples/synthetic-input.mp4
 *.mov
 *.avi
 *.mkv
