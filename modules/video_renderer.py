@@ -55,16 +55,19 @@ def generate_srt(
         text = seg["text"].strip()
         if not text:
             continue
+        timeline_offset = 0.0
         for ks, ke in keep_segments:
-            if s >= ks and e <= ke:
-                entries.append((s, e, text))
-                break
-            # 部分重叠：仅保留重叠 > 0.5s 的
             overlap_start = max(s, ks)
             overlap_end = min(e, ke)
-            if overlap_end - overlap_start > 0.5:
-                entries.append((overlap_start, overlap_end, text))
+            # Partial overlaps still need more than 0.5s of retained speech.
+            if (s >= ks and e <= ke) or overlap_end - overlap_start > 0.5:
+                entries.append((
+                    timeline_offset + overlap_start - ks,
+                    timeline_offset + overlap_end - ks,
+                    text,
+                ))
                 break
+            timeline_offset += ke - ks
 
     with open(output_path, "w", encoding="utf-8") as f:
         for i, (s, e, text) in enumerate(entries, 1):

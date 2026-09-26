@@ -17,7 +17,7 @@ Video → FFmpeg audio extraction → silence detection → optional Whisper
 - FFmpeg audio extraction and silence detection.
 - Optional OpenAI-compatible Whisper transcription.
 - Optional DeepSeek-compatible semantic cut suggestions.
-- SRT, CMX3600 EDL and FCPXML generation.
+- CMX3600 EDL and FCPXML generation; SRT when transcription is available.
 - Optional local Premiere Pro bridge.
 
 ## Quick start
@@ -29,16 +29,19 @@ are local-only; copy `.env.example` and never commit a real key.
 python3 -m venv .venv
 . .venv/bin/activate
 pip install -r requirements.txt
-python ai_director.py path/to/synthetic-sample.mp4 --silence-only --no-video --no-launch-pr
+python ai_director.py examples/synthetic-input.mp4 --silence-only --no-video --no-launch-pr
 ```
 
-The repository contains no real video, voice or customer material. Create a
-5–10 second synthetic clip locally for a smoke run.
+The repository contains no real video, voice or customer material.
 
 A four-second FFmpeg-generated [synthetic input](examples/synthetic-input.mp4)
-and [sample timeline output](examples/sample-keep-list.json) are included for
+and [sample keep list](examples/sample-keep-list.json) are included for
 repeatable offline inspection. Run the documented command with this sample to
-exercise audio extraction, silence detection and interchange export.
+exercise audio extraction, silence detection and interchange export. The
+offline run retained one 4.017-second interval and generated this
+[EDL output](examples/sample-davinci.edl) plus FCPXML. Silence-only mode has no
+transcript, so it does not create an SRT file. The FCPXML references the local
+source path and must be regenerated on each machine; it is not checked in.
 
 ## Output and truth boundary
 
@@ -53,6 +56,10 @@ decision.
 PYTHONPATH=. python3 -m unittest discover -s tests -p 'test_*.py'
 python3 -m compileall -q ai_director.py modules pr_agent
 ```
+
+The tests cover kept-interval calculations, subtitle times after cuts, and
+the structure of EDL/FCPXML exports. They do not validate a rendered video or
+editing decisions from a model.
 
 ## Status
 
