@@ -7,6 +7,25 @@ from modules.video_renderer import generate_edl, generate_fcpxml, generate_srt
 
 
 class InterchangeTests(unittest.TestCase):
+    def test_fcpxml_quotes_in_filename_keep_xml_parseable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / 'synthetic "quoted" clip.mp4'
+            output = Path(directory) / 'edited.fcpxml'
+            generate_fcpxml([(0.0, 1.0)], str(source), str(output), total_duration=1.0)
+            root = ET.parse(output).getroot()
+        self.assertEqual(root.find('.//asset').get('name'), source.name)
+        self.assertEqual(root.find('.//clip').get('name'), source.name)
+        self.assertEqual(root.find('.//project').get('name'), 'AI_Edit_' + source.stem)
+
+    def test_fcpxml_special_path_is_a_single_correct_file_uri(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / 'synthetic 中文 & #clip%.mp4'
+            output = Path(directory) / 'edited.fcpxml'
+            generate_fcpxml([(0.0, 1.0)], str(source), str(output), total_duration=1.0)
+            asset = ET.parse(output).getroot().find('.//asset')
+        self.assertEqual(asset.get('src'), source.resolve().as_uri())
+        self.assertEqual(asset.get('name'), source.name)
+
     def test_subtitles_follow_the_edited_timeline(self):
         transcript = {
             'segments': [
