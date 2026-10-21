@@ -2,6 +2,7 @@
 视频渲染模块 - SRT / EDL / FCPXML / 最终成片
 """
 import os
+from pathlib import Path
 import subprocess
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -130,8 +131,7 @@ def generate_fcpxml(
     import xml.sax.saxutils as saxutils
 
     source_name = os.path.basename(source_path)
-    abs_path = os.path.abspath(source_path)
-    file_url = "file://" + saxutils.escape(abs_path)
+    file_url = Path(source_path).resolve().as_uri()
 
     project_name = f"AI_Edit_{os.path.splitext(source_name)[0]}"
     total_dur = total_duration or keep_segments[-1][1]
@@ -142,11 +142,11 @@ def generate_fcpxml(
         '<fcpxml version="1.10">',
         "  <resources>",
         f'    <format id="r1" name="FFVideoFormat{fps:.0f}p{fps:.0f}" frameDuration="1/{fps:.0f}s" width="1920" height="1080"/>',
-        f'    <asset id="r2" name="{saxutils.escape(source_name)}" src="{saxutils.escape(file_url)}" start="0s" duration="{total_dur:.6f}s" hasVideo="1" hasAudio="1" format="r1"/>',
+        f'    <asset id="r2" name={saxutils.quoteattr(source_name)} src={saxutils.quoteattr(file_url)} start="0s" duration="{total_dur:.6f}s" hasVideo="1" hasAudio="1" format="r1"/>',
         "  </resources>",
         "  <library>",
         '    <event name="AI Director Edit">',
-        f'      <project name="{saxutils.escape(project_name)}">',
+        f'      <project name={saxutils.quoteattr(project_name)}>',
         "        <sequence>",
         "          <spine>",
     ]
@@ -154,7 +154,7 @@ def generate_fcpxml(
     timeline_offset = 0.0
     for start, end in keep_segments:
         dur = end - start
-        lines.append(f'            <clip name="{saxutils.escape(source_name)}" offset="{timeline_offset:.6f}s" duration="{dur:.6f}s" start="{start:.6f}s">')
+        lines.append(f'            <clip name={saxutils.quoteattr(source_name)} offset="{timeline_offset:.6f}s" duration="{dur:.6f}s" start="{start:.6f}s">')
         lines.append(f'              <video ref="r2" offset="{start:.6f}s" dur="{dur:.6f}s"/>')
         lines.append(f'              <audio ref="r2" offset="{start:.6f}s" dur="{dur:.6f}s"/>')
         lines.append("            </clip>")
