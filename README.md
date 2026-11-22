@@ -1,54 +1,43 @@
 # AI Director
 
-![Synthetic timeline proof](docs/images/timeline.svg)
+Turn a talking-head clip into a **reviewable cut list**. Start with deterministic FFmpeg silence detection, then inspect the kept intervals before importing an EDL or FCPXML into an editor. Optional transcription and semantic cut suggestions are separate from the offline path.
 
-A small video-editing workflow prototype for turning a talking-head clip into
-reviewable edit decisions and common interchange outputs.
+[Try the synthetic input](examples/synthetic-input.mp4) · [Inspect the keep list](examples/sample-keep-list.json) · [Inspect the EDL](examples/sample-davinci.edl) · [Architecture](docs/architecture.md)
 
-## Workflow
+> **Portfolio scope:** The public fixture demonstrates the offline export path. It does not prove speech accuracy, model cut quality, NLE import, or a final rendered video.
 
-```text
-Video → FFmpeg audio extraction → silence detection → optional Whisper
-      → optional semantic cuts → timeline → SRT / EDL / FCPXML → review/render
-```
+## Reproduce the offline example
 
-## What exists
-
-- FFmpeg audio extraction and silence detection.
-- Optional OpenAI-compatible Whisper transcription.
-- Optional DeepSeek-compatible semantic cut suggestions.
-- CMX3600 EDL and FCPXML generation; SRT when transcription is available.
-- Optional local Premiere Pro bridge.
-
-## Quick start
-
-Requirements: Python 3.10+, FFmpeg and FFprobe. Optional provider credentials
-are local-only; copy `.env.example` and never commit a real key.
+Requires Python 3.10+, FFmpeg and FFprobe. Install the Python dependencies once; the sample run itself requires no model, API key or editor session.
 
 ```bash
 python3 -m venv .venv
 . .venv/bin/activate
-pip install -r requirements.txt
-python ai_director.py examples/synthetic-input.mp4 --silence-only --no-video --no-launch-pr
+python -m pip install -r requirements.txt
+python ai_director.py examples/synthetic-input.mp4 \
+  --silence-only --no-video --no-launch-pr --output-dir ./output/portfolio-demo
 ```
 
-The repository contains no real video, voice or customer material.
+| Inspect after running | What it shows |
+| --- | --- |
+| `synthetic-input_keep_list.json` | One kept interval from 0 to 4.017 s; the generated tone contains no detected silence. |
+| `synthetic-input_davinci.edl` | One source/record edit event; the committed EDL is a readable comparison. |
+| `synthetic-input_premiere.fcpxml` | A timeline and a file URI pointing to your local sample; regenerate after moving the source. |
 
-A four-second FFmpeg-generated [synthetic input](examples/synthetic-input.mp4)
-and [sample keep list](examples/sample-keep-list.json) are included for
-repeatable offline inspection. Run the documented command with this sample to
-exercise audio extraction, silence detection and interchange export. The
-offline run retained one 4.017-second interval and generated this
-[EDL output](examples/sample-davinci.edl) plus FCPXML. Silence-only mode has no
-transcript, so it does not create an SRT file. The FCPXML references the local
-source path and must be regenerated on each machine; it is not checked in.
+No SRT is expected in `--silence-only` mode because there is no transcript. The sample flags also suppress final MP4 rendering and the optional Premiere bridge.
 
-## Output and truth boundary
+![Synthetic offline timeline proof](docs/images/timeline.svg)
 
-The tool emits edit artifacts for review. Provider-backed transcription,
-semantic quality, Premiere import and final-video quality are not proven by the
-offline unit tests. Do not treat generated cuts as an automatic publishing
-decision.
+## How it works
+
+```text
+Video → FFmpeg audio extraction → silence detection → keep list → EDL / FCPXML
+                                           ↳ optional transcript and semantic cuts → SRT
+```
+
+- Deterministic cuts and timestamps can be inspected without a provider.
+- On the optional path, Whisper-compatible transcription and DeepSeek-compatible semantic suggestions can send audio or transcript text to the configured services. Use media you are allowed to send, keep credentials out of Git, and review proposals before using them.
+- The repository contains synthetic media only. No claims about a client deployment, full NLE integration, or automatic publishing.
 
 ## Verification
 
